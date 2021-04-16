@@ -3,7 +3,7 @@ const app = express()
 const {WebhookClient} = require('dialogflow-fulfillment');
  
 app.get('/', function (req, res) {
-  res.send('Hello World')
+  res.send('Servidor en linea')
 })
 
 app.post('/webhook', express.json(),function (req, res) {
@@ -20,23 +20,24 @@ app.post('/webhook', express.json(),function (req, res) {
     agent.add(`I'm sorry, can you try again?`);
   }
 
-  // Intencion para cancelar la materia.
+  // Intencion para cancelar una materia.
 
-  function Cancelar_Materia(agent) {
-    agent.add(`Aquí te ofrecemos un tutorial que te puede ayudar:`);
-    agent.add(`Enlace al tutorial`);
+  function ValoracionServicio(agent) {
+
+    agent.add(`Estaría encantada de recibir una calificación!! 😄😊`);
   }
 
-  // Vincualar el intento.
+  // Vincular el intento.
 
   let intentMap = new Map();
   intentMap.set('Default Welcome Intent', welcome);
   intentMap.set('Default Fallback Intent', fallback);
-  intentMap.set('Cancelar_Materia', Cancelar_Materia);
+  
+  intentMap.set('ValoracionServicio', ValoracionServicio);
 
   agent.handleRequest(intentMap);
   })
  
 app.listen(3000,()=> {
-    console.log("Servidor en linea")
+    console.log("Servidor en linea en el puerto 3000")
 } )
