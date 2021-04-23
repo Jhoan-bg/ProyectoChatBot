@@ -1,4 +1,4 @@
-Nombre: chatBot
+Nombre_BD: ChatBot_DB
 Usuario: Admin
 Contraseña: chatbot123
 Puerto: 3306
