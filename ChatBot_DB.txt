@@ -1,5 +1,0 @@
-Nombre_BD: ChatBot_DB
-Usuario: Admin
-Contraseña: chatbot123
-Puerto: 3306
-EndPoint: chatbot.cjpkhldaiedt.us-east-1.rds.amazonaws.com

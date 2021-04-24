@@ -1,43 +1,58 @@
-const express = require('express')
+const express = require('express');
+const { WebhookClient, Card } = require('dialogflow-fulfillment');
+
+const { welcomeIntent } = require('./intents/welcomeintent');
 const app = express()
-const {WebhookClient} = require('dialogflow-fulfillment');
- 
-app.get('/', function (req, res) {
-  res.send('Servidor en linea')
+
+
+app.get('/', (req, res) => {
+    res.send('Servidor en linea')
 })
 
-app.post('/webhook', express.json(),function (req, res) {
+app.post('/webhook', express.json(), (req, res) => {
     const agent = new WebhookClient({ request:req, response:res });
-  console.log('Dialogflow Request headers: ' + JSON.stringify(req.headers));
-  console.log('Dialogflow Request body: ' + JSON.stringify(req.body));
- 
-  function welcome(agent) {
-    agent.add(`Welcome to my agent!`);
-  }
- 
-  function fallback(agent) {
-    agent.add(`I didn't understand`);
-    agent.add(`I'm sorry, can you try again?`);
-  }
+    //console.log('Dialogflow Request headers: ' + JSON.stringify(req.headers));
+    //console.log('Dialogflow Request body: ' + JSON.stringify(req.body));
 
-  // Intencion para cancelar una materia.
+    /*
+    function welcomeIntent(agent) {
+      const { user } = req.body.originalDetectIntentRequest.payload.data.event;
+      console.log(user);
+    }
+    */
 
-  function ValoracionServicio(agent) {
+    function deletePersonaldata(agent) {
 
-    agent.add(`Estaría encantada de recibir una calificación!! 😄😊`);
-  }
+      const { user } = req.body.originalDetectIntentRequest.payload.data.event;
+      console.log("Usuario: ", user);
 
-  // Vincular el intento.
+      const { parameters } = req.body.queryResult;
+      console.log('Confirmacion: ', parameters);
+      //console.log(user);
 
-  let intentMap = new Map();
-  intentMap.set('Default Welcome Intent', welcome);
-  intentMap.set('Default Fallback Intent', fallback);
-  
-  intentMap.set('ValoracionServicio', ValoracionServicio);
+      return agent.add("Su información ha sido eliminada correctamente");
 
-  agent.handleRequest(intentMap);
-  })
- 
-app.listen(3000,()=> {
-    console.log("Servidor en linea en el puerto 3000")
+    }
+
+
+
+    // Vincular la intension.
+    let intentMap = new Map();
+
+    intentMap.set('welcome_intent', welcomeIntent);
+    intentMap.set('delete_personaldata', deletePersonaldata);
+
+    /*
+    // van todas las intenciones del endpoint
+    intentMap.set('conv_estadoAnimo', welcomeIntent);
+
+    intentMap.set('despedida_fin', welcomeIntent);
+    intentMap.set('novedad_notas', welcomeIntent);
+    */
+
+    agent.handleRequest(intentMap);
+})
+
+app.listen(3001,()=> {
+    console.log("Servidor en linea en el puerto 3001");
 } )
