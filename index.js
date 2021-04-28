@@ -1,7 +1,12 @@
 const express = require('express');
+
+
 const { WebhookClient, Card } = require('dialogflow-fulfillment');
 
-const { welcomeIntent } = require('./intents/welcomeintent');
+const { curso_ingles } = require('./intents/curso_ingles');
+
+const { nov_notas } = require('./intents/nov_notas');
+
 const app = express()
 
 
@@ -11,48 +16,85 @@ app.get('/', (req, res) => {
 
 app.post('/webhook', express.json(), (req, res) => {
     const agent = new WebhookClient({ request:req, response:res });
-    //console.log('Dialogflow Request headers: ' + JSON.stringify(req.headers));
-    //console.log('Dialogflow Request body: ' + JSON.stringify(req.body));
+    
+    // Pruebas de log de datos.
 
-    /*
-    function welcomeIntent(agent) {
-      const { user } = req.body.originalDetectIntentRequest.payload.data.event;
-      console.log(user);
+    console.log('Dialogflow Request headers: ' + JSON.stringify(req.headers));
+    console.log('Dialogflow Request body: ' + JSON.stringify(req.body));
+
+
+    //Log de valoraciones.
+
+    function ingr_valoraciones(agent) {
+
+        const { user } = req.body.originalDetectIntentRequest.payload.data.event;
+        console.log("Usuario: ", user);
+  
+        const { parameters } = req.body.queryResult;
+        console.log('Valoracion: ', parameters.n_valoracion);
+
+        if (parameters.n_valoracion == 'Excelente') {
+            agent.add("Genial !! gracias por valorar el servicio " + user.displayName);
+        }
+        else if (parameters.n_valoracion == 'Bueno') {
+            agent.add("Gracias por valorar el servicio " + user.displayName);
+        }
+        else if (parameters.n_valoracion == 'Regular') {
+            agent.add("Sentimos los inconvenientes, gracias por valorar el servicio " + user.displayName);
+        }
+        else if (parameters.n_valoracion == 'Malo') {
+            agent.add("De verdad sentimos los inconvenientes, gracias por valorar el servicio " + user.displayName);
+        }
+
+
     }
-    */
 
-    function deletePersonaldata(agent) {
 
-      const { user } = req.body.originalDetectIntentRequest.payload.data.event;
-      console.log("Usuario: ", user);
+     //Log de borrado de valoraciones.
 
-      const { parameters } = req.body.queryResult;
-      console.log('Confirmacion: ', parameters);
-      //console.log(user);
+    function borrar_valoraciones(agent) {
 
-      return agent.add("Su información ha sido eliminada correctamente");
+        //Consulta de parametros desde DialogFlow.
 
+        const { user } = req.body.originalDetectIntentRequest.payload.data.event;
+        console.log("Usuario: ", user);
+        
+        //Consulta de parametros desde HanGouts.
+        const { parameters } = req.body.queryResult;
+        console.log('Confirmacion: ', parameters.confirmacion);
+
+        //console.log('Confirmacion: ', (parameters.confirmacion == 'true'));
+
+        if (parameters.confirmacion == 'true'){
+
+            //Intruccion BD.
+
+            console.log("Datos borrados");
+            return agent.add("Su información ha sido eliminada correctamente " + user.displayName.normalize());
+        } 
+        else{
+            console.log("Datos preservados");
+            return agent.add("Trateme serio ome !!");
+        }
+        
     }
 
+    
+    // Mapeado de intenciones asociadas a las funciones.
 
-
-    // Vincular la intension.
     let intentMap = new Map();
 
-    intentMap.set('welcome_intent', welcomeIntent);
-    intentMap.set('delete_personaldata', deletePersonaldata);
+    intentMap.set('novedad_notas', nov_notas);
 
-    /*
-    // van todas las intenciones del endpoint
-    intentMap.set('conv_estadoAnimo', welcomeIntent);
+    intentMap.set('curso_ingles', curso_ingles);
 
-    intentMap.set('despedida_fin', welcomeIntent);
-    intentMap.set('novedad_notas', welcomeIntent);
-    */
+    intentMap.set('borrar_valoraciones', borrar_valoraciones);
+
+    intentMap.set('valoracion_servicio', ingr_valoraciones);
 
     agent.handleRequest(intentMap);
 })
 
-app.listen(3001,()=> {
-    console.log("Servidor en linea en el puerto 3001");
+app.listen(3000,()=> {
+    console.log("Servidor en linea en el puerto 3000");
 } )

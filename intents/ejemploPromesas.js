@@ -23,8 +23,7 @@ module.exports.welcomeIntent = agent => {
         buttonUrl: "http://www.umariana.edu.co/instructivos/1-datos-personales.pdf",
       }));
     })
-
-    .catch(error => { // Arrow Function
+    .catch(error => {
       return agent.add("Ocurrió un error con su solicitud");
     });
 }
