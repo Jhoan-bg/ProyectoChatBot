@@ -6,7 +6,7 @@ const { curso_ingles } = require("./intents/curso_ingles");
 
 const { nov_notas } = require("./intents/nov_notas");
 
-const { Cliente }= require("./connect-db/us_model.js");
+const { Cliente } = require("./connect-db/us_model.js");
 
 const app = express();
 
@@ -19,94 +19,70 @@ app.post("/webhook", express.json(), (req, res) => {
 
   // Pruebas de log de datos.
 
-  //console.log("Dialogflow Request headers: " + JSON.stringify(req.headers));
-  //console.log("Dialogflow Request body: " + JSON.stringify(req.body));
-
+  console.log("Dialogflow Request headers: " + JSON.stringify(req.headers));
+  console.log("Dialogflow Request body: " + JSON.stringify(req.body));
 
   
-  //Log de valoraciones.
+  //Envio de valoraciones.
 
   function ingr_valoraciones(agent) {
     const { user } = req.body.originalDetectIntentRequest.payload.data.event;
-    //console.log("Usuario: ", user);
+    console.log("Usuario: ", user);
 
     const { parameters } = req.body.queryResult;
-    //console.log("Valoracion: ", parameters.n_valoracion);
 
-    //console.log("Body:",req.body.originalDetectIntentRequest);
+    console.log("Valoracion: ", parameters.n_valoracion);
 
-    /*
-    console.log(
-      "Fecha",
-      req.body.originalDetectIntentRequest.payload.data.event.eventTime
-    );
-    */
+    // Parametros desde DialogFlow.
+    const { email, displayName } = user;
 
-      /*
-    if (parameters.n_valoracion == "Excelente") {
-      agent.add(
-        "Genial !! gracias por valorar el servicio " + user.displayName
-      );
-    } else if (parameters.n_valoracion == "Bueno") {
-      agent.add("Gracias por valorar el servicio " + user.displayName);
-    } else if (parameters.n_valoracion == "Regular") {
-      agent.add(
-        "Sentimos los inconvenientes, gracias por valorar el servicio " +
-          user.displayName
-      );
-    } else if (parameters.n_valoracion == "Malo") {
-      agent.add(
-        "De verdad sentimos los inconvenientes, gracias por valorar el servicio " +
-          user.displayName
-      );
-    }
-    */
-    
-    const {
-      email,name
-    }=user;
-
+    //parametros desde HanGouts.
     const cliente = new Cliente({
       us_correo: email,
-      us_nombre: name,
-      valoracion: "Bueno",
-      fecha: "Fecha de hoy"
+      us_nombre: displayName,
+      valoracion: parameters.n_valoracion,
+      fecha: req.body.originalDetectIntentRequest.payload.data.event.eventTime,
     });
 
     // Enviar usuario a la base de datos.
-    
-   
-     // peticion a la base: resolve: manejador de respuesta, reject: manejador de fallo
+
     return new Promise((resolve, reject) => {
+      // peticion a la base: resolve: manejador de respuesta, reject: manejador de fallo
       Cliente.create(cliente, (err, data) => {
         if (err) reject(err);
         // manejamos la respuesta y enviamos el resultado
-        resolve(data);       
-      })
-
-    }).then(results => { // recibir los resultados
-      //console.log("Es resultado de la consulta es: ", results);
-
-      // crear respuesta Card
-      return agent.add("Bien!");
+        resolve(data);
+      });
     })
-    .catch(error => {
+      .then((results) => {
+        // recibir los resultados && mensaje personalizado para cada res.
 
-     //return agent.add("Ya tienes una valoracion registrada.");
-
-     return agent.add(new Suggestion({
-        title: "test",
-      }));
-     
-    });
-
+        if (parameters.n_valoracion == "Excelente") {
+          return agent.add(
+            "Genial !! gracias por valorar el servicio " + user.displayName
+          );
+        } else if (parameters.n_valoracion == "Bueno") {
+          return agent.add(
+            "Gracias por valorar el servicio " + user.displayName
+          );
+        } else if (parameters.n_valoracion == "Regular") {
+          return agent.add(
+            "Sentimos los inconvenientes, gracias por valorar el servicio " +
+              user.displayName
+          );
+        } else if (parameters.n_valoracion == "Malo") {
+          return agent.add(
+            "De verdad sentimos los inconvenientes, gracias por valorar el servicio " +
+              user.displayName
+          );
+        }
+      })
+      .catch((error) => {
+        return agent.add("Ya tienes una valoracion registrada");
+      });
   }
 
-  
-  
-
-
-  //Log de borrado de valoraciones.
+  //Borrado de valoraciones.
 
   function borrar_valoraciones(agent) {
     //Consulta de parametros desde DialogFlow.
@@ -118,21 +94,33 @@ app.post("/webhook", express.json(), (req, res) => {
     const { parameters } = req.body.queryResult;
     console.log("Confirmacion: ", parameters.confirmacion);
 
-    //console.log('Confirmacion: ', (parameters.confirmacion == 'true'));
+    //Inicializacion de variable email.
+
+    const { email } = user;
 
     if (parameters.confirmacion == "true") {
-      //Intruccion BD.
-
-      console.log("Datos borrados");
-      return agent.add(
-        "Su información ha sido eliminada correctamente " +
-          user.displayName.normalize()
-      );
+      return new Promise((resolve, reject) => {
+        // peticion a la base: resolve: manejador de respuesta, reject: manejador de fallo
+        Cliente.remove(email, (err, data) => {
+          if (err) reject(err);
+          // manejamos la respuesta y enviamos el resultado
+          resolve(data);
+        });
+      })
+        .then((results) => {
+          // Mensaje de respuesta.
+          return agent.add("Se elimino satisfactoriamente tu ultima valoracion");
+        })
+        .catch((error) => {
+          return agent.add("No encontro un usuario con los datos registrados");
+        });
     } else {
       console.log("Datos preservados");
       return agent.add("Trateme serio ome !!");
     }
   }
+
+
 
   // Mapeado de intenciones asociadas a las funciones.
 

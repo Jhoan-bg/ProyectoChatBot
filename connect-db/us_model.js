@@ -9,7 +9,7 @@ const Cliente = function (cliente) {
   this.fecha = cliente.fecha;
 };
 
-//Crear cliente.
+// Envio de datos a la base.
 
 Cliente.create = (newCliente, result) => {
   sql.query("INSERT INTO user_valuations SET ?", newCliente, (err, res) => {
@@ -22,6 +22,28 @@ Cliente.create = (newCliente, result) => {
     result(null, { id: res.insertId, ...newCliente });
   });
 };
+
+// Borrado de datos.
+
+Cliente.remove = (email, result) => {
+  sql.query("DELETE FROM user_valuations WHERE us_correo = ?", email, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(null, err);
+      return;
+    }
+    if (res.affectedRows == 0) {
+      // No se encontro el usuario con ese correo.
+      result({ kind: "not_found" }, null);
+      return;
+    }
+    console.log("Se elimino el usuario con email: ", email);
+    result(null, res);
+  });
+};
+
+
+//Exportamos las funciones.
 
 module.exports = {
   Cliente,
