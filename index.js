@@ -1,6 +1,6 @@
 const express = require("express");
 
-const { WebhookClient, Card } = require("dialogflow-fulfillment");
+const { WebhookClient, Card, Suggestion } = require("dialogflow-fulfillment");
 
 const { curso_ingles } = require("./intents/curso_ingles");
 
@@ -91,7 +91,13 @@ app.post("/webhook", express.json(), (req, res) => {
       return agent.add("Bien!");
     })
     .catch(error => {
-      return agent.add("Ocurrió un error con su solicitud");
+
+     //return agent.add("Ya tienes una valoracion registrada.");
+
+     return agent.add(new Suggestion({
+        title: "test",
+      }));
+     
     });
 
   }
