@@ -42,6 +42,53 @@ Cliente.remove = (email, result) => {
   });
 };
 
+// Actualizacion de valoracion.
+
+
+Cliente.update= (email, cliente, result) => {
+  sql.query(
+    "UPDATE user_valuations SET us_correo = ?, us_nombre = ?, valoracion = ?, fecha = ? WHERE us_correo = ?",
+    [cliente.us_correo, cliente.us_nombre, cliente.valoracion, cliente.fecha, email],
+    (err, res) => {
+      if (err) {
+        console.log("error: ", err);
+        result(null, err);
+        return;
+      }
+      if (res.affectedRows == 0) {
+        // No se encontro el usuario con ese correo.
+        result({ kind: "not_found" }, null);
+        return;
+      }
+      console.log("Se actualizo la valoracion de:", email);
+      result(null, res);
+    }
+  );
+};
+
+
+// Traer valoracion de la base.
+
+Cliente.getValues = (email, result) => {
+  sql.query('SELECT * FROM user_valuations WHERE us_correo = ?', email, (err, res) => {
+    if (err) {
+      console.log("error: ", err);
+      result(null, err);
+      return;
+    }
+    if (res.affectedRows == 0) {
+      // No se encontro el usuario con ese correo.
+      result({ kind: "not_found" }, null);
+      return;
+    }
+    console.log("Se importaron los datos correctamente para: ", email);
+    result(null, res);
+  });
+};
+
+
+
+
 
 //Exportamos las funciones.
 

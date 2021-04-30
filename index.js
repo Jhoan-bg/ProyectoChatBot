@@ -22,7 +22,6 @@ app.post("/webhook", express.json(), (req, res) => {
   console.log("Dialogflow Request headers: " + JSON.stringify(req.headers));
   console.log("Dialogflow Request body: " + JSON.stringify(req.body));
 
-  
   //Envio de valoraciones.
 
   function ingr_valoraciones(agent) {
@@ -109,7 +108,9 @@ app.post("/webhook", express.json(), (req, res) => {
       })
         .then((results) => {
           // Mensaje de respuesta.
-          return agent.add("Se elimino satisfactoriamente tu ultima valoracion");
+          return agent.add(
+            "Se elimino satisfactoriamente tu ultima valoracion"
+          );
         })
         .catch((error) => {
           return agent.add("No encontro un usuario con los datos registrados");
@@ -120,7 +121,90 @@ app.post("/webhook", express.json(), (req, res) => {
     }
   }
 
+  // Actualizacion de valoraciones recientes.
 
+  function actualizar_valoraciones(agent) {
+    //Consulta de parametros desde DialogFlow.
+
+    const { user } = req.body.originalDetectIntentRequest.payload.data.event;
+    console.log("Usuario: ", user);
+
+    //Consulta de parametros desde HanGouts.
+    const { parameters } = req.body.queryResult;
+    console.log("Nueva valoracion: ", parameters.new_valoracion);
+
+    // Parametros desde DialogFlow.
+    const { email, displayName } = user;
+
+    //parametros desde HanGouts.
+    const cliente = new Cliente({
+      us_correo: email,
+      us_nombre: displayName,
+      valoracion: parameters.new_valoracion,
+      fecha: req.body.originalDetectIntentRequest.payload.data.event.eventTime,
+    });
+
+    // Enviar actualizacion a la base de datos.
+
+    return new Promise((resolve, reject) => {
+      // peticion a la base: resolve: manejador de respuesta, reject: manejador de fallo
+      Cliente.update(email, cliente, (err, data) => {
+        if (err) reject(err);
+        // manejamos la respuesta y enviamos el resultado
+        resolve(data);
+      });
+    })
+      .then((results) => {
+        return agent.add(
+          "Tu valoracion fue actualizada correctamente " +
+            user.displayName +
+            " gracias por brindarnos tu opinion."
+        );
+      })
+      .catch((error) => {
+        return agent.add("No se encontro ninguna valoracion anterior...");
+      });
+  }
+
+  // Desplegar datos guardados en la BD.
+
+  function mostrar_registros(agent) {
+    //Consulta de parametros desde DialogFlow.
+
+    const { user } = req.body.originalDetectIntentRequest.payload.data.event;
+    console.log("Usuario: ", user);
+
+    // Parametros desde DialogFlow.
+    const { email } = user;
+
+    // Traer valoraciones de la base de datos.
+
+    return new Promise((resolve, reject) => {
+      // peticion a la base: resolve: manejador de respuesta, reject: manejador de fallo
+      Cliente.getValues(email, (err, data) => {
+        if (err) reject(err);
+        // manejamos la respuesta y enviamos el resultado
+        resolve(data);
+      });
+    })
+      .then((results) => {
+        return agent.add(
+          //console.log((results))
+          "Estos son los datos de tu ultima valoracion.\n" +
+            "Correo: " +
+            Object.values(results[0])[0] +
+            "\nNombre: " +
+            Object.values(results[0])[1] +
+            "\nValoracion al servicio: " +
+            Object.values(results[0])[2] +
+            "\nFecha de valoracion: " +
+            Object.values(results[0])[3]
+        );
+      })
+      .catch((error) => {
+        return agent.add("No se encontro ninguna valoracion anterior...");
+      });
+  }
 
   // Mapeado de intenciones asociadas a las funciones.
 
@@ -133,6 +217,10 @@ app.post("/webhook", express.json(), (req, res) => {
   intentMap.set("borrar_valoraciones", borrar_valoraciones);
 
   intentMap.set("valoracion_servicio", ingr_valoraciones);
+
+  intentMap.set("actual_valoracion", actualizar_valoraciones);
+
+  intentMap.set("mostrar_registros", mostrar_registros);
 
   agent.handleRequest(intentMap);
 });
